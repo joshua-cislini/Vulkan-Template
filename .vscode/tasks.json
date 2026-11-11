@@ -1,0 +1,208 @@
+{
+	// Tasks call `make` (Linux/macOS) or `mingw32-make` (Windows/MSYS2).
+	// On Windows the default MSYS2 UCRT64 location is prepended to PATH, so the
+	// tasks work even if MSYS2 was never added to the system PATH. If MSYS2 lives
+	// elsewhere, either add it to PATH or adjust the two paths below.
+	"version": "2.0.0",
+	"windows": {
+		"options": {
+			"env": {
+				"PATH": "C:\\msys64\\ucrt64\\bin;C:\\msys64\\usr\\bin;${env:PATH}"
+			}
+		}
+	},
+	"tasks": [
+		{
+			"label": "Build",
+			"detail": "Debug build (make)",
+			"type": "process",
+			"command": "make",
+			"windows": {
+				"command": "mingw32-make"
+			},
+			"args": [],
+			"group": {
+				"kind": "build",
+				"isDefault": true
+			},
+			"problemMatcher": {
+				"base": "$gcc",
+				"fileLocation": [
+					"relative",
+					"${workspaceFolder}"
+				]
+			}
+		},
+		{
+			"label": "Build Release",
+			"detail": "Optimized build (make release)",
+			"type": "process",
+			"command": "make",
+			"windows": {
+				"command": "mingw32-make"
+			},
+			"args": [
+				"release"
+			],
+			"group": "build",
+			"problemMatcher": {
+				"base": "$gcc",
+				"fileLocation": [
+					"relative",
+					"${workspaceFolder}"
+				]
+			}
+		},
+		{
+			"label": "Compile Shaders",
+			"detail": "Compile GLSL shaders to SPIR-V (make shaders)",
+			"type": "process",
+			"command": "make",
+			"windows": {
+				"command": "mingw32-make"
+			},
+			"args": [
+				"shaders"
+			],
+			"group": "build",
+			"problemMatcher": {
+				"base": "$gcc",
+				"fileLocation": [
+					"relative",
+					"${workspaceFolder}"
+				]
+			}
+		},
+		{
+			"label": "Run",
+			"detail": "Build and run (make run)",
+			"type": "process",
+			"command": "make",
+			"windows": {
+				"command": "mingw32-make"
+			},
+			"args": [
+				"run"
+			],
+			"group": "build",
+			"problemMatcher": {
+				"base": "$gcc",
+				"fileLocation": [
+					"relative",
+					"${workspaceFolder}"
+				]
+			}
+		},
+		{
+			"label": "Test",
+			"detail": "Build and run the unit tests (make test)",
+			"type": "process",
+			"command": "make",
+			"windows": {
+				"command": "mingw32-make"
+			},
+			"args": [
+				"test"
+			],
+			"group": {
+				"kind": "test",
+				"isDefault": true
+			},
+			"problemMatcher": {
+				"base": "$gcc",
+				"fileLocation": [
+					"relative",
+					"${workspaceFolder}"
+				]
+			}
+		},
+		{
+			"label": "Clean",
+			"detail": "Delete the build directory (make clean)",
+			"type": "process",
+			"command": "make",
+			"windows": {
+				"command": "mingw32-make"
+			},
+			"args": [
+				"clean"
+			],
+			"problemMatcher": []
+		},
+		{
+			"label": "Rebuild",
+			"detail": "Clean and build (make rebuild)",
+			"type": "process",
+			"command": "make",
+			"windows": {
+				"command": "mingw32-make"
+			},
+			"args": [
+				"rebuild"
+			],
+			"group": "build",
+			"problemMatcher": {
+				"base": "$gcc",
+				"fileLocation": [
+					"relative",
+					"${workspaceFolder}"
+				]
+			}
+		},
+		{
+			"label": "Format",
+			"detail": "Format all sources (make format)",
+			"type": "process",
+			"command": "make",
+			"windows": {
+				"command": "mingw32-make"
+			},
+			"args": [
+				"format"
+			],
+			"problemMatcher": []
+		},
+		{
+			"label": "Tidy",
+			"detail": "Static analysis with clang-tidy (make tidy)",
+			"type": "process",
+			"command": "make",
+			"windows": {
+				"command": "mingw32-make"
+			},
+			"args": [
+				"tidy"
+			],
+			"problemMatcher": {
+				"base": "$gcc",
+				"fileLocation": [
+					"relative",
+					"${workspaceFolder}"
+				]
+			}
+		},
+		{
+			// Generates compile_commands.json for clangd as soon as the folder is
+			// opened (VS Code asks once to allow automatic tasks).
+			"label": "Configure",
+			"detail": "Generate compile_commands.json for clangd (make info)",
+			"type": "process",
+			"command": "make",
+			"windows": {
+				"command": "mingw32-make"
+			},
+			"args": [
+				"--silent",
+				"info"
+			],
+			"runOptions": {
+				"runOn": "folderOpen"
+			},
+			"presentation": {
+				"reveal": "never",
+				"close": true
+			},
+			"problemMatcher": []
+		}
+	]
+}

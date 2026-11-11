@@ -1,0 +1,9 @@
+{
+	"recommendations": [
+		"llvm-vs-code-extensions.vscode-clangd",
+		"ms-vscode.cpptools",
+		"ms-vscode.makefile-tools",
+		"slevesque.shader",
+		"dan-c-underwood.shader"
+	]
+}

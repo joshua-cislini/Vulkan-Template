@@ -1,0 +1,83 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  unix:
+    name: ${{ matrix.os }} / ${{ matrix.cxx }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+        cxx: [g++, clang++]
+        exclude:
+          - os: macos-latest
+            cxx: g++ # Apple's g++ is clang++
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Dependencies (Linux)
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt update
+          sudo apt install -y g++ clang libvulkan-dev libglfw3-dev glslc mesa-vulkan-drivers vulkan-tools xvfb
+
+      - name: Install Dependencies (macOS)
+        if: runner.os == 'macOS'
+        run: |
+          brew install vulkan-headers molten-vk glfw shaderc
+
+      - name: Build (debug)
+        run: make CXX=${{ matrix.cxx }} WERROR=1
+
+      - name: Test (debug)
+        if: runner.os == 'Linux'
+        run: xvfb-run --auto-servernum make test CXX=${{ matrix.cxx }} WERROR=1
+
+      - name: Test (debug, macOS)
+        if: runner.os == 'macOS'
+        run: make test CXX=${{ matrix.cxx }} WERROR=1
+
+      - name: Test with sanitizers
+        if: runner.os == 'Linux'
+        run: xvfb-run --auto-servernum make test CXX=${{ matrix.cxx }} WERROR=1 SANITIZE=address,undefined BUILD_DIR=build-asan
+
+      - name: Build (release)
+        run: make release CXX=${{ matrix.cxx }} WERROR=1
+
+  windows:
+    name: windows / msys2-ucrt64
+    runs-on: windows-latest
+    defaults:
+      run:
+        shell: msys2 {0}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: msys2/setup-msys2@v2
+        with:
+          msystem: UCRT64
+          install: >-
+            mingw-w64-ucrt-x86_64-gcc
+            mingw-w64-ucrt-x86_64-make
+            mingw-w64-ucrt-x86_64-vulkan-loader
+            mingw-w64-ucrt-x86_64-vulkan-headers
+            mingw-w64-ucrt-x86_64-shaderc
+            mingw-w64-ucrt-x86_64-glfw
+      - name: Build (debug)
+        run: mingw32-make WERROR=1
+      - name: Test (debug)
+        run: mingw32-make test WERROR=1
+      - name: Build and test (release)
+        run: mingw32-make release test WERROR=1
+
+  format:
+    name: clang-format
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Check formatting
+        run: make format-check

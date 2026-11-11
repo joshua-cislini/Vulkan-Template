@@ -1,0 +1,22 @@
+# Normalize line endings: LF in the repository and in the working tree
+# (GNU Make, shell tools and compilers all handle LF on every platform).
+* text=auto eol=lf
+
+*.bat  text eol=crlf
+*.cmd  text eol=crlf
+
+# Binary files that may be dropped into lib/ or bin/.
+*.a      binary
+*.lib    binary
+*.dll    binary
+*.so     binary
+*.so.*   binary
+*.dylib  binary
+*.exe    binary
+*.o      binary
+*.obj    binary
+*.pdb    binary
+*.png    binary
+*.jpg    binary
+*.ico    binary
+*.zip    binary

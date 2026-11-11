@@ -1,6 +1,7 @@
 #include "test_framework.hpp"
 
 #include <cstdint>
+#include <cstring>
 #include <format>
 #include <fstream>
 #include <iostream>
@@ -21,6 +22,24 @@ static void test_glfw_vulkan_support() {
 	glfwTerminate();
 }
 
+static void setup_portability(VkInstanceCreateInfo &create_info, std::vector<const char *> &extensions) {
+	uint32_t count = 0;
+	vkEnumerateInstanceExtensionProperties(nullptr, &count, nullptr);
+	if(count > 0) {
+		std::vector<VkExtensionProperties> available(count);
+		vkEnumerateInstanceExtensionProperties(nullptr, &count, available.data());
+		for(const auto &ext : available) {
+			if(std::strcmp(ext.extensionName, "VK_KHR_portability_enumeration") == 0) {
+				extensions.push_back("VK_KHR_portability_enumeration");
+				create_info.enabledExtensionCount = static_cast<uint32_t>(extensions.size());
+				create_info.ppEnabledExtensionNames = extensions.data();
+				create_info.flags |= 0x00000001; // VK_INSTANCE_CREATE_ENUMERATE_PORTABILITY_BIT_KHR
+				break;
+			}
+		}
+	}
+}
+
 static void test_vulkan_instance_lifecycle() {
 	VkApplicationInfo app_info {
 			.sType = VK_STRUCTURE_TYPE_APPLICATION_INFO,
@@ -30,12 +49,18 @@ static void test_vulkan_instance_lifecycle() {
 			.engineVersion = VK_MAKE_VERSION(1, 0, 0),
 			.apiVersion = VK_API_VERSION_1_0};
 
+	std::vector<const char *> extensions;
 	VkInstanceCreateInfo create_info {
 			.sType = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO,
 			.pApplicationInfo = &app_info};
+	setup_portability(create_info, extensions);
 
 	VkInstance instance = VK_NULL_HANDLE;
 	VkResult result = vkCreateInstance(&create_info, nullptr, &instance);
+	if(result == VK_ERROR_INCOMPATIBLE_DRIVER) {
+		std::cout << "      [SKIP] No compatible Vulkan driver/GPU available in this environment\n";
+		return;
+	}
 	CHECK_EQ(VK_SUCCESS, result);
 	CHECK(instance != VK_NULL_HANDLE);
 
@@ -48,12 +73,18 @@ static void test_physical_device_enumeration() {
 	VkApplicationInfo app_info {
 			.sType = VK_STRUCTURE_TYPE_APPLICATION_INFO,
 			.apiVersion = VK_API_VERSION_1_0};
+	std::vector<const char *> extensions;
 	VkInstanceCreateInfo create_info {
 			.sType = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO,
 			.pApplicationInfo = &app_info};
+	setup_portability(create_info, extensions);
 
 	VkInstance instance = VK_NULL_HANDLE;
 	VkResult result = vkCreateInstance(&create_info, nullptr, &instance);
+	if(result == VK_ERROR_INCOMPATIBLE_DRIVER) {
+		std::cout << "      [SKIP] No compatible Vulkan driver/GPU available in this environment\n";
+		return;
+	}
 	CHECK_EQ(VK_SUCCESS, result);
 
 	if(result == VK_SUCCESS) {

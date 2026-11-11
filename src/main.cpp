@@ -30,7 +30,7 @@ int main(int argc, char *argv[]) {
 	}
 
 	VulkanApp app;
-	if(!app.init(800, 600, PROJECT_NAME " - Vulkan Triangle")) {
+	if(!app.init(800, 600, PROJECT_NAME)) {
 		std::cerr << "error: Failed to initialize Vulkan application.\n";
 		return EXIT_FAILURE;
 	}

@@ -59,3 +59,22 @@ Implements the complete Vulkan rendering pipeline leveraging modern C++ features
 - **Device Rating**: Evaluates physical GPUs, preferring discrete GPUs over integrated hardware, querying queue families using `std::optional`.
 - **Dynamic Viewport & Scissor**: Recreates swapchains on resize or minimization without recreating the entire graphics pipeline.
 - **Strict Single Ownership**: Copy and move constructors/assignments are deleted to guarantee handles are never duplicated or prematurely closed.
+
+---
+
+## Making It Your Own: Extending & Customizing `src/`
+
+This template is structured so you can freely modify, refactor, or replace the starter implementation as your graphics application evolves:
+
+1. **Splitting into Subsystems**:
+   As your engine grows, you can decompose `VulkanApp` into distinct classes:
+   - `src/renderer/swapchain.cpp`: Swapchain creation, image views, and resize handling.
+   - `src/renderer/pipeline.cpp`: Vulkan graphics/compute pipelines and shader modules.
+   - `src/renderer/renderer.cpp`: Command buffer recording, draw passes, and frame synchronization.
+   - `src/scene/camera.cpp`: Projection, view matrices, and input handling.
+
+2. **Zero-Configuration Expansion**:
+   Whenever you add a new `.cpp` file anywhere in `src/` (or create new subdirectories like `src/core/`, `src/math/`), the build system automatically includes and compiles it on your next `make`.
+
+3. **Writing Tests for Your Modules**:
+   Because `src/main.cpp` is excluded when running `make test`, all your code in `src/` is directly accessible and linkable to unit tests in `tests/test_*.cpp`.

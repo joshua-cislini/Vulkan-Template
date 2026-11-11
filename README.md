@@ -1,6 +1,8 @@
-# Vulkan C++23 Project Template (Triangle)
+# Vulkan C++23 Project Template
 
-A professional, cross-platform, zero-friction Vulkan C++ project template rendering a modern Vulkan Triangle with automatic GLSL-to-SPIR-V shader compilation, Pragmatic C++23 RAII lifecycle management, validation layers, dynamic state handling, and turnkey tooling.
+A professional, cross-platform, zero-friction Vulkan C++ starter template designed for building modern Vulkan applications, graphics engines, demos, and games. 
+
+It ships with a clean, working Vulkan renderer ("Hello Triangle") as a proven, functional baseline, accompanied by automated GLSL-to-SPIR-V shader compilation, Pragmatic C++23 RAII lifecycle management, validation layers, dynamic state handling, and turnkey tooling.
 
 Compiles out of the box on **Windows** (MSYS2 UCRT64, native `cmd.exe`, PowerShell, Git Bash, or LunarG Vulkan SDK), **Linux**, and **macOS** (MoltenVK) using **GNU Make**, **GCC (g++)** or **Clang (clang++)**, **glslc**, **clangd**, **GDB/LLDB**, and **VS Code**.
 
@@ -8,13 +10,19 @@ Compiles out of the box on **Windows** (MSYS2 UCRT64, native `cmd.exe`, PowerShe
 
 ## Table of Contents
 
-1. [Key Features](#key-features)
-2. [Project Structure](#project-structure)
-3. [Prerequisites & Toolchain Setup](#prerequisites--toolchain-setup)
-4. [Quick Start](#quick-start)
-5. [Configuration Guide (`config.mk`)](#configuration-guide-configmk)
-6. [Pragmatic C++23 Architecture](#pragmatic-c23-architecture)
-7. [Vulkan Architecture & Rendering Pipeline](#vulkan-architecture--rendering-pipeline)
+1. [Quick Start](#quick-start)
+2. [Starter Guide: Making It Your Project](#starter-guide-making-it-your-project)
+   - [Renaming Your Application](#1-renaming-your-application)
+   - [Adding Your Own Source Code](#2-adding-your-own-source-code)
+   - [Adding & Customizing Shaders](#3-adding--customizing-shaders)
+   - [Adding Third-Party Libraries](#4-adding-third-party-libraries)
+   - [Adding Unit & Integration Tests](#5-adding-unit--integration-tests)
+   - [Building for Production / Release](#6-building-for-production--release)
+3. [Key Features](#key-features)
+4. [Project Structure](#project-structure)
+5. [Prerequisites & Toolchain Setup](#prerequisites--toolchain-setup)
+6. [Configuration Guide (`config.mk`)](#configuration-guide-configmk)
+7. [Architecture Overview](#architecture-overview)
 8. [Automatic Shader Pipeline (`shaders/`)](#automatic-shader-pipeline-shaders)
 9. [Drop-In Dependency Architecture](#drop-in-dependency-architecture)
 10. [Unit & Headless Testing System](#unit--headless-testing-system)
@@ -27,14 +35,95 @@ Compiles out of the box on **Windows** (MSYS2 UCRT64, native `cmd.exe`, PowerShe
 
 ---
 
+## Quick Start
+
+Clone or download this template, then open a terminal in the project directory:
+
+```bash
+# 1. Build in debug mode (compiles C++23 sources and GLSL shaders)
+make
+
+# 2. Run the application
+make run
+
+# 3. Run the automated test suites
+make test
+
+# 4. Build in release mode (optimized -O2, stripped symbols, validation layers off)
+make release run
+```
+
+> **Windows Note**: You can invoke `mingw32-make` directly from `cmd.exe` or PowerShell (or alias `make` to `mingw32-make`). All targets and flags work identically.
+
+---
+
+## Starter Guide: Making It Your Project
+
+This repository is built specifically to serve as your **starting canvas**. The build system is designed as a zero-maintenance engine: as you add, rename, or reorganize files, it automatically discovers and compiles them without requiring you to manage Makefile rules.
+
+### 1. Renaming Your Application
+By default, the executable takes the name of your root directory. To specify an explicit name and version:
+1. Open [`config.mk`](config.mk).
+2. Set your application name and version:
+   ```makefile
+   PROJECT = my-vulkan-engine
+   VERSION = 1.0.0
+   ```
+3. Rebuild with `make rebuild`. Your binary will now be `build/debug/bin/my-vulkan-engine.exe`.
+
+### 2. Adding Your Own Source Code
+You do **not** need to touch the build system when writing new code:
+* **Add new `.cpp` files** directly in `src/` or any nested directory (e.g. `src/renderer/camera.cpp`, `src/scene/mesh.cpp`). The build system recursively scans `src/` and compiles every file.
+* **Add new `.hpp` files** in `include/` or alongside your code in `src/`. All subdirectories under `include/` and `src/` are automatically added to the include path (`-I`), so you can write:
+  ```cpp
+  #include "renderer/camera.hpp"
+  ```
+* **Extend or replace `VulkanApp`**: The starter class in [`src/vulkan_app.cpp`](src/vulkan_app.cpp) and [`include/vulkan_app.hpp`](include/vulkan_app.hpp) provides a full working Vulkan boilerplate (window, surface, swapchain, render pass, command buffers, and synchronization). You can freely refactor it, split it into smaller subsystems (e.g. `Window`, `Device`, `Renderer`, `PipelineCache`), or build your engine on top of it.
+
+### 3. Adding & Customizing Shaders
+* Drop any new GLSL shader into [`shaders/`](shaders/) with standard extensions (`.vert`, `.frag`, `.comp`, `.geom`, `.tesc`, `.tese`, `.mesh`, `.task`, `.rgen`, `.rmiss`, `.rchit`).
+* Shaders are incrementally compiled to SPIR-V bytecode (`.spv`) during `make` and automatically copied next to your binary in `build/<mode>/bin/shaders/`.
+* To compile shaders independently at any time, run:
+  ```bash
+  make shaders
+  ```
+
+### 4. Adding Third-Party Libraries
+The template features a zero-configuration drop-in architecture:
+* **Header-only libraries** (e.g. GLM, Vulkan Memory Allocator `vk_mem_alloc.h`, `stb_image.h`, `tinyobjloader`):
+  Drop them into [`include/`](include/) or [`include/vendor/`](include/). They are immediately visible to your code.
+* **Precompiled static or import libraries** (`.a`, `.lib`, `.dll.a`):
+  Drop them into [`lib/`](lib/). The build system automatically detects and links them using order-independent groups (`--start-group ... --end-group`).
+* **Runtime DLLs / shared objects** (`.dll`, `.so`, `.dylib`):
+  Drop them into [`bin/`](bin/) or [`lib/`](lib/). They are automatically copied next to your compiled executable in `build/<mode>/bin/`.
+* **System packages**:
+  To link libraries installed via `pkg-config`, simply append them to `PKG_CONFIG_PACKAGES` in [`config.mk`](config.mk):
+  ```makefile
+  PKG_CONFIG_PACKAGES ?= vulkan glfw3 glm
+  ```
+
+### 5. Adding Unit & Integration Tests
+* Create a new file in [`tests/`](tests/) prefixed with `test_` (e.g., `tests/test_camera.cpp`, `tests/test_math.cpp`).
+* Each test file gets its own executable linked against your project code (excluding `src/main.cpp`).
+* Run all tests with:
+  ```bash
+  make test
+  ```
+
+### 6. Building for Production / Release
+* Run `make release` to produce a fully optimized binary (`-O2 -DNDEBUG -s`) with Vulkan validation layers automatically stripped.
+* Output binaries and all required runtime assets are self-contained in `build/release/bin/`.
+
+---
+
 ## Key Features
 
 - **Pragmatic C++23 Design**:
   Clean, deterministic RAII without heavy OOP bloat or complex template metaprogramming. Uses standard library containers (`std::vector`, `std::array`, `std::span`), zero-allocation string views (`std::string_view`), optional states (`std::optional`), and type-safe formatted I/O (`std::format`).
-- **Complete Vulkan Triangle Engine**:
+- **Complete Working Vulkan Engine Baseline**:
   GLFW windowing with `GLFW_NO_API`, Vulkan surface, physical GPU rating (discrete GPU preference), logical device and queue retrieval, swapchain management, render pass configuration, dynamic viewport and scissor states, bufferless vertex rendering, double-buffering synchronization with semaphores and fences (`MAX_FRAMES_IN_FLIGHT = 2`), and robust swapchain recreation on window resize and minimization.
 - **Automatic Shader Pipeline (`shaders/`)**:
-  Any GLSL shader placed in `shaders/` (`.vert`, `.frag`, `.comp`, etc.) is automatically discovered, incrementally compiled to SPIR-V (`.spv`) via Google's `glslc`, and deployed into `build/<mode>/bin/shaders/` alongside your executable.
+  Any GLSL shader placed in `shaders/` is automatically discovered, incrementally compiled to SPIR-V (`.spv`) via Google's `glslc`, and deployed into `build/<mode>/bin/shaders/` alongside your executable.
 - **Built-in Vulkan Validation Layers**:
   Debug builds (`BUILD=debug`) automatically enable `VK_LAYER_KHRONOS_validation` and attach a formatted debug messenger callback. Release builds (`BUILD=release`) compile with `-O2 -DNDEBUG -s` and strip validation layers for zero overhead.
 - **Single Configuration Point (`config.mk`)**:
@@ -48,7 +137,7 @@ Compiles out of the box on **Windows** (MSYS2 UCRT64, native `cmd.exe`, PowerShe
 - **Dynamic `compile_commands.json` Generation**:
   Accurate compilation database generated directly from Makefile flags on every build, providing **clangd** and **clang-tidy** perfect code intelligence with zero configuration drift.
 - **Turnkey VS Code Integration**:
-  Pre-configured tasks (`tasks.json`), F5 debugging with GDB/LLDB pretty-printing (`launch.json`), clangd language server (`settings.json`), and recommended GLSL extensions.
+  Pre-configured tasks (`tasks.json`), F5 debugging with GDB/LLDB pretty-printing (`launch.json`), clangd language server (`settings.json`), and recommended GLSL extensions (`slevesque.shader`).
 - **Cross-Platform CI Matrix**:
   Multi-platform GitHub Actions workflow covering Linux (GCC & Clang with software Lavapipe rasterization), macOS (Clang & MoltenVK), Windows (MSYS2 UCRT64), Sanitizers, and formatting checks.
 
@@ -60,25 +149,25 @@ Each directory contains a dedicated `README.md` detailing its conventions, disco
 
 ```text
 .
-├── config.mk                 # Project identity, C++23 flags, and configuration (user-editable)
-├── Makefile                  # Portable C++ build engine (POSIX sh & Windows cmd.exe — do not edit)
-├── compile_commands.json     # Clang compilation database (auto-generated by make)
+├── config.mk                 # Project identity, C++23 flags, and configuration (edit this for your project)
+├── Makefile                  # Portable C++ build engine (auto-discovers your sources, headers, and shaders)
+├── compile_commands.json     # Clang compilation database (auto-generated on build)
 ├── .clang-format             # Code formatting rules (LLVM-based, tabs, clean style)
 ├── .clang-tidy               # Static analysis rules tailored for modern C++23
 ├── .gitattributes            # Line endings and binary file handling
 ├── .gitignore                # Ignores build outputs, caches, and system files
 ├── LICENSE                   # MIT License
 │
-├── src/                      # [README] Application C++ source code
+├── src/                      # [README] Application C++ source code (add your .cpp files here)
 │   ├── main.cpp              # Entry point: argument parsing and lifecycle coordination
-│   ├── vulkan_app.cpp        # VulkanApp class implementation (Pragmatic C++23 RAII)
+│   ├── vulkan_app.cpp        # VulkanApp starter implementation (Pragmatic C++23 RAII)
 │   └── README.md             # Guide: source organization and engine lifecycle
 │
-├── include/                  # [README] Public interface headers
+├── include/                  # [README] Public interface headers (add your .hpp and vendor headers here)
 │   ├── vulkan_app.hpp        # VulkanApp class declaration and state
 │   └── README.md             # Guide: header inclusion, API contracts, C++ library drop-ins
 │
-├── shaders/                  # [README] GLSL shader source files
+├── shaders/                  # [README] GLSL shader source files (add .vert, .frag, .comp here)
 │   ├── triangle.vert         # Vertex shader: bufferless triangle positions and RGB colors
 │   ├── triangle.frag         # Fragment shader: color interpolation output
 │   └── README.md             # Guide: shader stages, glslc compilation, SPIR-V bytecode
@@ -89,7 +178,7 @@ Each directory contains a dedicated `README.md` detailing its conventions, disco
 ├── bin/                      # [README] Drop-in runtime dynamic libraries (.dll, .so, .dylib)
 │   └── README.md             # Guide: automatic deployment to build/bin, rpath handling
 │
-├── tests/                    # [README] Standalone unit test suites
+├── tests/                    # [README] Standalone unit test suites (add test_*.cpp files here)
 │   ├── test_framework.hpp    # Minimal, dependency-free C++23 test assertion macros
 │   ├── test_vulkan.cpp       # Headless Vulkan capability & shader verification test
 │   └── README.md             # Guide: writing tests, running suites, custom frameworks
@@ -105,7 +194,7 @@ Each directory contains a dedicated `README.md` detailing its conventions, disco
 ├── .vscode/                  # [README] Turnkey Visual Studio Code configuration
 │   ├── extensions.json       # Recommended extensions (clangd, cpptools, makefile-tools, shader)
 │   ├── launch.json           # F5 debug launcher (GDB/LLDB, integrated & external console)
-│   ├── settings.json         # clangd language server, format-on-save, search exclusions
+│   ├── settings.json         # clangd language server, format-on-save, search exclusions, shader associations
 │   ├── tasks.json            # Build, test, shaders, clean, format, tidy, and configure tasks
 │   └── README.md             # Guide: VS Code tasks, debugging profiles, MSYS2 PATH injection
 │
@@ -138,7 +227,7 @@ Each directory contains a dedicated `README.md` detailing its conventions, disco
 4. On Windows command prompts, you can invoke `mingw32-make` directly (or alias `make` to `mingw32-make`).
 
 > [!NOTE]
-> **LunarG Vulkan SDK Support**: If you installed the official [LunarG Vulkan SDK](https://vulkan.lunarg.com/), the build system automatically detects the `VULKAN_SDK` environment variable and includes its headers and library paths.
+> **LunarG Vulkan SDK Support**: If you install the official [LunarG Vulkan SDK](https://vulkan.lunarg.com/), the build system automatically detects the `VULKAN_SDK` environment variable and includes its headers and library paths.
 
 ### Linux (Debian / Ubuntu)
 
@@ -157,42 +246,8 @@ sudo pacman -S base-devel gcc gdb clang vulkan-devel glfw shaderc
 ### macOS (Homebrew / MoltenVK)
 
 ```bash
-brew install make llvm vulkan-headers molten-vk glfw shaderc
+brew install make llvm pkg-config vulkan-headers vulkan-loader molten-vk glfw shaderc
 ```
-
----
-
-## Quick Start
-
-Open a terminal in the project directory:
-
-```bash
-# 1. Build in debug mode (compiles C++23 sources and GLSL shaders)
-make
-
-# 2. Run the Vulkan Triangle application
-make run
-
-# 3. Compile shaders independently
-make shaders
-
-# 4. Run the headless Vulkan unit tests
-make test
-
-# 5. Build in release mode (optimized -O2, stripped symbols, validation layers off)
-make release
-
-# 6. Build and run in release mode
-make release run
-
-# 7. Check build configuration, detected libraries, and paths
-make info
-
-# 8. Clean all build outputs
-make clean
-```
-
-> **Windows Note**: If `make` is not aliased, run `mingw32-make` instead. All targets, variables, and flags work identically.
 
 ---
 
@@ -206,7 +261,7 @@ All project settings are centralized in [`config.mk`](config.mk). The generic [`
 |---|---|---|
 | `PROJECT` | Current folder name | Output binary name. Spaces are automatically converted to underscores. |
 | `VERSION` | `0.1.0` | Injected into preprocessor as `PROJECT_VERSION=\"...\"`. |
-| `PROJECT_TYPE` | `executable` | Target type: `executable` for Vulkan applications. |
+| `PROJECT_TYPE` | `executable` | Target type: `executable`, `static`, or `shared`. |
 | `BUILD` | `debug` | Default build mode: `debug` (validation layers on) or `release` (validation layers off). |
 | `CXX` | `g++` | C++ compiler (`g++`, `clang++`, or cross-compilation triple). |
 | `CXX_STANDARD` | `c++23` | C++ language standard: `c++23`, `c++20`, `c++17`. |
@@ -227,9 +282,9 @@ All project settings are centralized in [`config.mk`](config.mk). The generic [`
 
 ---
 
-## Pragmatic C++23 Architecture
+## Architecture Overview
 
-This template strikes a pragmatic balance for graphics programming:
+The starter engine strikes a pragmatic balance for graphics programming:
 
 1. **RAII Resource Management**:
    The `VulkanApp` class owns all Vulkan and GLFW handles. Its destructor deterministically waits for GPU idle and destroys all resources in reverse creation order.
@@ -238,13 +293,7 @@ This template strikes a pragmatic balance for graphics programming:
 3. **`std::span` Interface**:
    Array slices and buffer views are passed cleanly without pointer/length decoupling.
 4. **Fast, Standard Vulkan C Headers**:
-   Uses standard `<vulkan/vulkan.h>` instead of heavy C++ template bindings (`vulkan.hpp`), keeping build times fast while enjoying all C++ language conveniences.
-
----
-
-## Vulkan Architecture & Rendering Pipeline
-
-The template implements the standard modern Vulkan rendering pipeline:
+   Uses standard `<vulkan/vulkan.h>` instead of heavy C++ template bindings (`vulkan.hpp`), keeping build times fast while enjoying modern C++ language conveniences.
 
 ```mermaid
 flowchart TD
@@ -284,7 +333,7 @@ Vulkan executes SPIR-V intermediate bytecode rather than raw GLSL source text. T
 1. **Drop-in GLSL**: Place `.vert`, `.frag`, or `.comp` files directly into `shaders/`.
 2. **Incremental Compilation**: The Makefile compiles only modified shaders into `build/<mode>/bin/shaders/<name>.<stage>.spv` using `glslc`.
 3. **Runtime Loading**: Shaders are co-located next to the produced binary and can also be loaded relative to the project root.
-4. **Bufferless Vertex Generation**: The vertex shader generates triangle vertices directly from `gl_VertexIndex`, avoiding unnecessary vertex buffer setup for Hello Triangle.
+4. **Bufferless Vertex Generation**: The starter vertex shader generates triangle vertices directly from `gl_VertexIndex`, avoiding unnecessary vertex buffer setup for Hello Triangle.
 
 ---
 
@@ -347,6 +396,7 @@ Every time `make` is invoked, it writes an exact compilation database (`compile_
 Open the workspace folder in VS Code (`code .`):
 
 - **IntelliSense**: Powered by the recommended **clangd** extension via `compile_commands.json`.
+- **Shader Highlighting**: Powered by the recommended **Shader languages support** extension (`slevesque.shader`) with pre-configured `.vert`, `.frag`, and `.comp` associations.
 - **Keyboard Shortcuts**:
   - `Ctrl + Shift + B`: Run default build task (compiles project and shaders).
   - `F5`: Build and launch with GDB / LLDB debugger.
@@ -364,7 +414,7 @@ The repository includes a multi-platform CI workflow in [`.github/workflows/ci.y
 
 - **Ubuntu (GCC & Clang)**: Debug build, shader compilation, headless test run via `xvfb-run` and Mesa Lavapipe software rasterization, AddressSanitizer + UndefinedBehaviorSanitizer run, Release build.
 - **macOS (Clang)**: Debug build, shader compilation, MoltenVK linkage, Release build.
-- **Windows (MSYS2 UCRT64)**: Debug build, shader compilation, headless test run, Release build.
+- **Windows (MSYS2 UCRT64)**: Debug build, shader compilation, headless test run with Mesa Lavapipe, Release build.
 - **Clang-Format Gate**: Verifies style compliance across all files.
 
 See [`.github/workflows/README.md`](.github/workflows/README.md) for local verification steps.
@@ -378,7 +428,7 @@ See [`.github/workflows/README.md`](.github/workflows/README.md) for local verif
 | `all` *(default)* | Build application and compile all shaders in debug mode | `make` |
 | `release` | Build optimized release binary without validation layers | `make release` |
 | `shaders` | Compile GLSL shaders in `shaders/` to SPIR-V | `make shaders` |
-| `run` | Build and execute the Vulkan Triangle application | `make run ARGS="--help"` |
+| `run` | Build and execute the application | `make run ARGS="--help"` |
 | `test` | Build and run all test suites in `tests/` | `make test` |
 | `clean` | Delete the `build/` directory | `make clean` |
 | `rebuild` | Clean and rebuild everything | `make rebuild` |
@@ -398,19 +448,20 @@ Ensure your graphics driver is up to date. On Windows, NVIDIA, AMD, and Intel pr
 
 ### 2. Validation layer warnings or missing layer
 In debug builds, `VK_LAYER_KHRONOS_validation` is enabled by default. If the layer is not installed, the application prints a warning and proceeds without validation. To install validation layers:
-- **Windows**: Install the LunarG Vulkan SDK or run `pacman -S mingw-w64-ucrt-x86_64-vulkan-validation-layers` in MSYS2.
-- **Linux**: Run `sudo apt install vulkan-validationlayers`.
+* **Windows**: Install the LunarG Vulkan SDK or run `pacman -S mingw-w64-ucrt-x86_64-vulkan-validation-layers` in MSYS2.
+* **Linux**: Run `sudo apt install vulkan-validationlayers`.
+* **macOS**: Included with the LunarG macOS SDK or MoltenVK.
 
 ### 3. `glslc: command not found`
 The shader compiler `glslc` is part of the Vulkan SDK and the `shaderc` package:
-- **Windows MSYS2**: `pacman -S mingw-w64-ucrt-x86_64-shaderc`
-- **Linux**: `sudo apt install glslc` or `shaderc`
-- **macOS**: `brew install shaderc`
+* **Windows**: Included with the LunarG Vulkan SDK or via MSYS2 `pacman -S mingw-w64-ucrt-x86_64-shaderc`.
+* **Linux**: `sudo apt install glslc` or `shaderc`.
+* **macOS**: `brew install shaderc`.
 
 ### 4. `make: command not found` on Windows
 Windows does not ship with `make` by default. If you installed MSYS2 UCRT64:
-- Run `mingw32-make` instead of `make`.
-- Or alias `make` to `mingw32-make` in PowerShell / cmd.
+* Run `mingw32-make` instead of `make`.
+* Or alias `make` to `mingw32-make` in PowerShell / cmd.
 
 ---
 

@@ -686,8 +686,15 @@ bool VulkanApp::create_graphics_pipeline() {
 			.attachmentCount = 1,
 			.pAttachments = &color_blend_attachment};
 
+	VkPushConstantRange push_constant_range {
+			.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT,
+			.offset = 0,
+			.size = sizeof(float)};
+
 	VkPipelineLayoutCreateInfo pipeline_layout_info {
-			.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO};
+			.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO,
+			.pushConstantRangeCount = 1,
+			.pPushConstantRanges = &push_constant_range};
 
 	if(vkCreatePipelineLayout(m_device, &pipeline_layout_info, nullptr, &m_pipeline_layout) != VK_SUCCESS) {
 		std::cerr << "error: vkCreatePipelineLayout failed\n";
@@ -808,6 +815,16 @@ void VulkanApp::record_command_buffer(VkCommandBuffer command_buffer, uint32_t i
 			.offset = {0, 0},
 			.extent = m_swapchain_extent};
 	vkCmdSetScissor(command_buffer, 0, 1, &scissor);
+
+	// Push elapsed time to the fragment shader for dynamic color updates
+	float current_time = static_cast<float>(glfwGetTime());
+	vkCmdPushConstants(
+			command_buffer,
+			m_pipeline_layout,
+			VK_SHADER_STAGE_FRAGMENT_BIT,
+			0,
+			sizeof(float),
+			&current_time);
 
 	// Draw 3 bufferless vertices defined directly in triangle.vert
 	vkCmdDraw(command_buffer, 3, 1, 0, 0);

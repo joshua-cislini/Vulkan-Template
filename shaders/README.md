@@ -80,7 +80,27 @@ Interpolates vertex colors and writes the final RGBA color to the framebuffer at
 layout(location = 0) in vec3 fragColor;
 layout(location = 0) out vec4 outColor;
 
+layout(push_constant) uniform PushConstants {
+    float time;
+} pc;
+
 void main() {
-    outColor = vec4(fragColor, 1.0);
+    vec3 animatedColor = fragColor * (0.6 + 0.4 * sin(pc.time * 2.0 + vec3(0.0, 2.094, 4.188)));
+    outColor = vec4(animatedColor, 1.0);
 }
 ```
+
+---
+
+## Adding Your Own Shaders
+
+The included triangle shaders are starting examples. You can freely extend or replace them:
+
+1. **Adding 3D & Vertex Buffers**:
+   Add uniform buffer objects (UBO) or push constants for Model-View-Projection matrices (e.g. `layout(binding = 0) uniform UniformBufferObject { mat4 model; mat4 view; mat4 proj; } ubo;`), and define vertex input bindings (`layout(location = 0) in vec3 inPosition;`).
+
+2. **Adding Compute Shaders (`.comp`)**:
+   Drop any file ending in `.comp` into `shaders/` (e.g., `particles.comp`). It will be compiled to `build/<mode>/bin/shaders/particles.comp.spv` on the next build.
+
+3. **Subdirectories in `shaders/`**:
+   The Makefile discovers shaders recursively, so you can organize complex shader pipelines into folders (e.g., `shaders/postprocess/bloom.frag`, `shaders/lighting/pbr.frag`).

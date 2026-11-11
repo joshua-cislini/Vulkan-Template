@@ -1,6 +1,6 @@
 /**
  * @file vulkan_app.hpp
- * @brief Public interface and application class for the Vulkan Triangle (Pragmatic C++23).
+ * @brief Starter Vulkan application class and rendering coordinator (C++23 Template).
  */
 #pragma once
 

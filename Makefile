@@ -1,11 +1,13 @@
 # =============================================================================
-#  Vulkan C++23 Build System (Makefile)
+#  Vulkan C++23 Starter Template — Build System (Makefile)
 # =============================================================================
-#  You normally do NOT need to edit this file:
-#    - project settings live in config.mk
-#    - source files go into src/, headers into include/
-#    - shaders go into shaders/ (automatically compiled to SPIR-V)
-#    - third-party libraries go into lib/, runtime DLLs/shared libs into bin/
+#  Designed as a zero-maintenance build engine for your Vulkan applications:
+#    - Project settings, dependencies, and flags are configured in config.mk
+#    - Drop your C++ sources into src/ and headers into include/
+#    - Drop shaders into shaders/ (automatically compiled to SPIR-V)
+#    - Drop third-party libraries into lib/, and runtime DLLs into bin/
+#    - Add unit and integration tests into tests/
+#  The build system automatically detects, compiles, and links your code.
 #
 #  Works on Windows (MSYS2 / MinGW-w64, from a POSIX shell OR plain cmd.exe),
 #  Linux and macOS with GNU Make. Run `make help` for the available targets.

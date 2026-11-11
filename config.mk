@@ -1,11 +1,13 @@
 # =============================================================================
-#  Project configuration (config.mk) — Pragmatic C++23
+#  Project Configuration (config.mk) — Vulkan C++23 Starter Template
 # =============================================================================
-#  This is the ONLY build configuration file you normally need to touch.
-#  The Makefile contains the generic C++ build machinery and reads every setting.
+#  This file centralizes all project-level settings for your Vulkan application.
+#  Customize the project name, target type, C++ compiler flags, and dependencies
+#  here. The Makefile automatically reads these settings and discovers your source
+#  files, shaders, and libraries so you can focus directly on graphics code.
 #
 #  Every variable uses `?=` so it can also be overridden from the command line:
-#      make PROJECT=vulkan-demo BUILD=release
+#      make PROJECT=my-vulkan-app BUILD=release
 # =============================================================================
 
 # --- Identity ----------------------------------------------------------------
@@ -63,6 +65,14 @@ ifneq ($(strip $(VULKAN_SDK)),)
   else
     EXTRA_LDFLAGS += -L"$(VULKAN_SDK)/lib"
   endif
+endif
+
+# macOS Homebrew include and library paths
+ifneq ($(OS),Windows_NT)
+ifeq ($(shell uname -s 2>/dev/null),Darwin)
+  EXTRA_CPPFLAGS += -I/opt/homebrew/include -I/usr/local/include
+  EXTRA_LDFLAGS  += -L/opt/homebrew/lib -L/usr/local/lib
+endif
 endif
 
 EXTRA_CPPFLAGS ?=

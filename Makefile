@@ -189,7 +189,7 @@ else ifeq ($(PLATFORM),macos)
   SHARED_NAME   := lib$(PROJECT).dylib
   LINK_LIB_GLOB := *.a *.dylib
   RUNTIME_GLOB  := *.dylib
-  RPATH         := -Wl,-rpath,@executable_path
+  RPATH         := -Wl,-rpath,@executable_path -Wl,-rpath,/opt/homebrew/lib -Wl,-rpath,/usr/local/lib
   LINK_GROUP    :=
   MODE_LDFLAGS  := $(filter-out -s,$(MODE_LDFLAGS))
 else
